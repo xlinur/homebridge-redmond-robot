@@ -2,7 +2,7 @@
   "displayName": "Homebridge Redmond Robot",
   "name": "homebridge-redmond-robot",
   "version": "1.1.0",
-  "author": "Pavel Liaukovichk",
+  "author": "Pavel Liaukovich",
   "description": "Homebridge Plugin for Redmond Robot Vacuum",
   "license": "Apache-2.0",
   "repository": {
