@@ -1,22 +1,18 @@
 {
-  "displayName": "Homebridge Tesvor",
-  "name": "homebridge-tesvor",
-  "version": "1.0.6",
-  "author": "Marcel Kordek",
-  "description": "Homebridge Plugin for Tesvor Robot Vacuum",
+  "displayName": "Homebridge Redmond Robot",
+  "name": "homebridge-redmond-robot",
+  "version": "1.0.1",
+  "author": "Pavel Liaukovichk",
+  "description": "Homebridge Plugin for Redmond Robot Vacuum",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/marcelkordek/homebridge-tesvor.git"
+    "url": "git://github.com/xlinur/homebridge-redmond-robot.git"
   },
   "bugs": {
-    "url": "https://github.com/marcelkordek/homebridge-tesvor/issues"
+    "url": "https://github.com/xlinur/homebridge-redmond-robot/issues"
   },
-  "homepage": "https://github.com/marcelkordek/homebridge-tesvor#readme",
-  "funding": {
-    "type": "paypal",
-    "url": "https://www.paypal.me/marcelkorrdek/EUR"
-  },
+  "homepage": "https://github.com/xlinur/homebridge-redmond-robot#readme",
   "engines": {
     "node": ">=10.17.0",
     "homebridge": ">=1.3.0"
@@ -39,8 +35,9 @@
   },
   "keywords": [
     "homebridge-plugin",
-    "homebridge-tesvor",
-    "tesvor",
+    "homebridge-redmond-robot",
+    "redmond",
+    "redmond robot",
     "robot vacuum"
   ],
   "dependencies": {

@@ -5,9 +5,9 @@ const crypto = require('crypto')
 const AWS = require("aws-sdk");
 const AWSIot = require("aws-iot-device-sdk");
 
-module.exports = class Weback {
+module.exports = class Redmond {
     constructor(username, password, region) {
-        // Creds for WeBack API
+        // Creds for Redmond API
         this.username = username;
         this.password = password;
         this.country_code = region;
@@ -26,9 +26,8 @@ module.exports = class Weback {
 
         // Expiration time of session
         this.expiration_time;
-
-        // Start
-        this.init()
+        this.endpoint;
+        this.init();
     }
 
     async init() {
@@ -41,13 +40,24 @@ module.exports = class Weback {
             if (!this.password) { console.log('Password is not provided via params'); return }
             if (!this.country_code) { console.log('Country Code is not provided via params'); return }
 
-            const payload = {
-                "App_Version": "android_3.9.3",
-                "Password": crypto.createHash('md5').update(this.password).digest("hex"),
-                "User_Account": this.country_code + '-' + this.username
-            }
+            const appKey = '1f9ba014d72549e99f4314a7d61604ee'
+            const userAccount = this.country_code.replace('+', '00') + '-' + this.username;
+            const requestId = this.generateQuickGuid();
+            const timeStamp = Date.now();
+            const signatureSource = 'App_Key=' + appKey + '&User_Account='+userAccount + '&Timestamp=' + timeStamp + '&Request_Id=' + requestId;
 
-            const { body } = await got.post('https://www.weback-login.com/WeBack/WeBack_Login_Ats_V3', {
+            const payload = {
+                "User_Account": userAccount,
+                "Password": crypto.createHash('md5').update(this.password).digest("hex"),
+                "App_Version": "1.0.5",
+                "App_Type": "android_1.0.5",
+                "App_Id": "redmond",
+                "Request_Id": requestId,
+                "Timestamp": timeStamp,
+                "Signature": crypto.createHash('sha256').update(signatureSource).digest("hex")
+            };
+
+            const { body } = await got.post('https://www.grit-tech.link/redmond/Redmond_Login_Ats', {
                 json: payload,
                 responseType: 'json'
             });
@@ -65,7 +75,6 @@ module.exports = class Weback {
                 }
             }
             cognitoidentity.getCredentialsForIdentity(params, function (err, data) {
-                //console.log(data)
                 if (err) console.log(err, err.stack); // an error occurred
                 else resolve(data);           // successful response
             });
@@ -75,7 +84,6 @@ module.exports = class Weback {
 
     make_session_from_cognito(aws_creds, region) {
         return new Promise(async (resolve, reject) => {
-            //this.aws_identity_id = aws_creds.Credentials.IdentityId
             this.aws_access_key_id = aws_creds.Credentials.AccessKeyId
             this.aws_secret_access_key = aws_creds.Credentials.SecretKey
             this.aws_session_token = aws_creds.Credentials.SessionToken
@@ -90,8 +98,7 @@ module.exports = class Weback {
             let lambda = new AWS.Lambda({ region: this.region })
             this.aws_session = lambda
             this.iot = new AWS.Iot()
-            var endpoint = await this.get_endpoint()
-            this.iot_data = new AWS.IotData({ endpoint: endpoint })
+            this.iot_data = new AWS.IotData({ endpoint: this.endpoint })
 
             resolve(lambda);
         })
@@ -104,13 +111,14 @@ module.exports = class Weback {
     async get_session() {
         if (this.aws_session && !this.is_renewal_required()) return this.aws_session
 
-        let weback_data = await this.auth()
-        if (weback_data.Request_Result != 'success') { console.log('Could not authenticate'); return }
+        let redmond_data = await this.auth()
+        if (redmond_data.Request_Result != 'success') { console.log('Could not authenticate'); return }
 
-        this.region = weback_data['Region_Info']
-        this.aws_identity_id = weback_data['Identity_Id']
+        this.endpoint = 'https://' + redmond_data['End_Point'];
+        this.region = redmond_data['Region_Info']
+        this.aws_identity_id = redmond_data['Identity_Id']
 
-        let aws_creds = await this.auth_cognito(this.region, weback_data['Identity_Id'], weback_data['Token'])
+        let aws_creds = await this.auth_cognito(this.region, redmond_data['Identity_Id'], redmond_data['Token'])
         this.aws_creds = aws_creds
         this.expiration_time = aws_creds.Credentials.Expiration
 
@@ -124,7 +132,7 @@ module.exports = class Weback {
             if (!session) session = await this.get_session();
 
             var params = {
-                FunctionName: "Device_Manager_V2",
+                FunctionName: "Redmond_User_Query_All_Thing",
                 InvocationType: "RequestResponse",
                 Payload: JSON.stringify({
                     "Device_Manager_Request": "query",
@@ -134,10 +142,15 @@ module.exports = class Weback {
             };
 
             session.invoke(params, function (err, data) {
-                if (err) console.log(err, err.stack); // an error occurred
-                else var payload = JSON.parse(data.Payload); resolve(payload['Request_Cotent']);           // successful response
+                if (err) {
+                    console.log(err, err.stack);
+                    reject();
+                } else {
+                    var payload = JSON.parse(data.Payload);
+                    resolve(payload ? payload.Room[0].Thing : {});
+                }
             });
-        })
+        });
     }
 
     async get_device_description(device, session = this.aws_session) {
@@ -157,26 +170,8 @@ module.exports = class Weback {
 
     }
 
-    get_endpoint() {
-        return new Promise(async (resolve, reject) => {
-            var params = {
-                endpointType: "iot:Data-ATS"
-            };
-            this.iot.describeEndpoint(params, function (err, data) {
-                //console.log(data)
-                if (err) console.log(err, err.stack); // an error occurred
-                else resolve("https://" + data.endpointAddress);           // successful response
-            });
-        })
-
-    }
-
     async get_device_shadow(device_name, session = this.aws_session) {
         if (!session) session = await this.get_session();
-
-        // var endpoint = await this.get_endpoint()
-        // var iot_data = new AWS.IotData({endpoint: endpoint})
-
 
         var params = {
             thingName: device_name
@@ -192,9 +187,6 @@ module.exports = class Weback {
 
     async publish_device_msg(device_name, desired_payload = {}, session = this.aws_session) {
         if (!session || this.is_renewal_required()) session = await this.get_session();
-
-        //var endpoint = await this.get_endpoint()
-        //var iot_data = new AWS.IotData({ endpoint: endpoint })
 
         var topic = "$aws/things/" + device_name + "/shadow/update"
         var payload = {
@@ -216,11 +208,9 @@ module.exports = class Weback {
 
     async getConnection() {
         return new Promise(async (resolve, reject) => {
-            var endpoint = await this.get_endpoint()
-
             var client = AWSIot.device({
                 region: AWS.config.region,
-                host: endpoint.replace('https://', ''),
+                host: this.endpoint.replace('https://', ''),
                 clientId: 'mqtt-' + (Math.floor((Math.random() * 100000) + 1)),
                 protocol: 'wss',
                 maximumReconnectTimeMs: 8000,
@@ -231,5 +221,10 @@ module.exports = class Weback {
             });
             resolve(client)
         })
+    }
+
+    generateQuickGuid() {
+        return Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15);
     }
 }

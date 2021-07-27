@@ -1,11 +1,11 @@
 import { API } from 'homebridge';
 
 import { PLATFORM_NAME } from './settings';
-import { TesvorPlatform } from './platform';
+import { RedmondRobotPlatform } from './platform';
 
 /**
  * This method registers the platform with Homebridge
  */
 export = (api: API) => {
-  api.registerPlatform(PLATFORM_NAME, TesvorPlatform);
+  api.registerPlatform(PLATFORM_NAME, RedmondRobotPlatform);
 };
