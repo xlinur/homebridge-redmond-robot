@@ -3,6 +3,9 @@ dist
 
 # ------------- Defaults ------------- #
 
+.idea
+.DS_Store
+
 # Logs
 logs
 *.log
