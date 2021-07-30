@@ -105,7 +105,7 @@ module.exports = class Redmond {
     }
 
     is_renewal_required() {
-        return this.expiration_time < Date.parse(this.expiration_time)
+        return Date.now() < Date.parse(this.expiration_time)
     }
 
     async get_session() {
