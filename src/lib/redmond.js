@@ -105,6 +105,7 @@ module.exports = class Redmond {
     }
 
     is_renewal_required() {
+        console.log('is_renewal_required', Date.now(), Date.parse(this.expiration_time), Date.now() > Date.parse(this.expiration_time));
         return Date.now() > Date.parse(this.expiration_time)
     }
 
@@ -199,7 +200,7 @@ module.exports = class Redmond {
             payload: JSON.stringify(payload),
             qos: 0
         };
-        //console.log(params)
+        console.log('publish_device_msg', params);
         this.iot_data.publish(params, function (err, data) {
             if (err) console.log(err, err.stack); // an error occurred
             //else console.log(data);           // successful response

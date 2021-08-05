@@ -86,7 +86,7 @@ export class SwitchAccessory {
           const isCharging = vacuum.isCharging(mode);
           this.state.Charging = isCharging;
           this.state.On = state;
-          this.log.debug(accessory.context.nickname, mode);
+          this.log.info(accessory.context.nickname, mode);
           this.service.updateCharacteristic(this.platform.Characteristic.On, state);
           batteryService.updateCharacteristic(this.platform.Characteristic.ChargingState, isCharging);
         }
@@ -97,14 +97,14 @@ export class SwitchAccessory {
           const isCharging = vacuum.isCharging(mode);
           this.state.Charging = isCharging;
           this.state.On = state;
-          this.log.debug(accessory.context.nickname, mode);
+          this.log.info(accessory.context.nickname, mode);
           this.service.updateCharacteristic(this.platform.Characteristic.On, state);
           batteryService.updateCharacteristic(this.platform.Characteristic.ChargingState, isCharging);
         }
         if (Object.prototype.hasOwnProperty.call(message.state.reported, 'battery_level')) {
           const battery_level = message.state.reported.battery_level;
           this.state.BatteryLevel = battery_level;
-          this.log.debug(accessory.context.nickname, battery_level);
+          this.log.info(accessory.context.nickname, battery_level);
           batteryService.updateCharacteristic(this.platform.Characteristic.BatteryLevel, battery_level);
         }
       });
@@ -127,7 +127,7 @@ export class SwitchAccessory {
     };
     this.client.publish(topic, JSON.stringify(payload));
 
-    this.platform.log.debug('Set Characteristic On ->', value);
+    this.platform.log.info('Set Characteristic On ->', value);
   }
 
   /**
@@ -147,7 +147,7 @@ export class SwitchAccessory {
     // implement your own code to check if the device is on
     const isOn = this.state.On;
 
-    this.platform.log.debug('Get Characteristic On ->', isOn);
+    this.platform.log.info('Get Characteristic On ->', isOn);
 
     // get state
     const topic = '$aws/things/' + this.accessory.context.device.thingName + '/shadow/get';
