@@ -18,6 +18,8 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
 
   private redmond: typeof Redmond;
 
+  private switches: SwitchAccessory[] = [];
+
   constructor(
     public readonly log: Logger,
     public readonly config: PlatformConfig,
@@ -67,6 +69,8 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
 
     const accessoryType = 'Switch' ;
 
+    this.switches = [];
+
     this.redmond.device_list().then((devices) => {
       for (const device of devices) {
         this.redmond.get_device_description(device).then((thing) => {
@@ -84,7 +88,7 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
             this.api.updatePlatformAccessories([existingAccessory]);
             switch(accessoryType){
               default:
-                new SwitchAccessory(this, existingAccessory, this.log);
+                this.switches.push(new SwitchAccessory(this, existingAccessory, this.log));
                 break;
             }
           } else {
@@ -102,7 +106,7 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
             // this is imported from `platformAccessory.ts`
             switch(accessoryType){
               default:
-                new SwitchAccessory(this, accessory, this.log);
+                this.switches.push(new SwitchAccessory(this, accessory, this.log));
                 this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
                 break;
             }
