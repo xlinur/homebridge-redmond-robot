@@ -16,6 +16,8 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
+  private redmond: typeof Redmond;
+
   constructor(
     public readonly log: Logger,
     public readonly config: PlatformConfig,
@@ -31,6 +33,10 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
       log.info('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
       this.discoverDevices();
+
+      setInterval(() => {
+        this.discoverDevices();
+      }, 3 * 60 * 60 * 1000);
     });
   }
 
@@ -54,16 +60,16 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
   async discoverDevices() {
     //const _this = this;
     //this.log.info('Config', this.config);
-    const redmond = new Redmond(this.config.username, this.config.password, this.config.country);
+    this.redmond = new Redmond(this.config.username, this.config.password, this.config.country);
 
     const startMode = this.config.startMode || 'AutoClean' ;
     const stopMode = this.config.stopMode || 'Standby' ;
 
     const accessoryType = 'Switch' ;
 
-    redmond.device_list().then((devices) => {
+    this.redmond.device_list().then((devices) => {
       for (const device of devices) {
-        redmond.get_device_description(device).then((thing) => {
+        this.redmond.get_device_description(device).then((thing) => {
           const nickname = thing.Thing_Nick_Name;
 
           const uuid = this.api.hap.uuid.generate(thing.thingId);
@@ -73,7 +79,7 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
             this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
             existingAccessory.context.device = thing;
             existingAccessory.context.nickname = nickname;
-            existingAccessory.context.redmond = redmond;
+            existingAccessory.context.redmond = this.redmond;
             existingAccessory.context.modes = { startMode: startMode, stopMode: stopMode };
             this.api.updatePlatformAccessories([existingAccessory]);
             switch(accessoryType){
@@ -90,7 +96,7 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.device = thing;
             accessory.context.nickname = nickname;
-            accessory.context.redmond = redmond;
+            accessory.context.redmond = this.redmond;
             accessory.context.modes = { startMode: startMode, stopMode: stopMode };
             // create the accessory handler for the newly create accessory
             // this is imported from `platformAccessory.ts`
