@@ -37,7 +37,7 @@ export class RedmondRobotPlatform implements DynamicPlatformPlugin {
       this.discoverDevices();
 
       setInterval(() => {
-        this.discoverDevices();
+        this.redmond = new Redmond(this.config.username, this.config.password, this.config.country);
       }, 3 * 60 * 60 * 1000);
     });
   }
